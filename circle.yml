@@ -1,0 +1,15 @@
+dependencies:
+  pre:
+    - sudo apt-get install jq
+
+test:
+  override:
+    - ./licenser.sh mit
+    - |
+        if [[ -z $(git status --porcelain) ]]; then \
+            true; \
+        else \
+            echo "Generated LICENSE file differed from LICENSE in commit. See LICENSE_diff.txt in artifacts directory for diff." && \
+            (git diff > $CIRCLE_ARTIFACTS/LICENSE_diff.txt) && \
+            false; \
+        fi
