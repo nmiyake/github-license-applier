@@ -24,11 +24,11 @@ function compute_sha256 {
     fi
 }
 
-COMMIT=false
-while getopts "c" opt; do
+COMMIT=true
+while getopts "d" opt; do
 case $opt in
-    c)
-        COMMIT=true
+    d)
+        COMMIT=false
         ;;
     \?)
         exit 1

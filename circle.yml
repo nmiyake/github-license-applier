@@ -4,7 +4,7 @@ dependencies:
 
 test:
   override:
-    - ./licenser.sh mit
+    - ./licenser.sh -d mit
     - |
         if [[ -z $(git status --porcelain) ]]; then \
             true; \

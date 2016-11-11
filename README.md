@@ -23,15 +23,15 @@ and compares the downloaded license to that digest.
 ./licenser.sh [license-type]
 ```
 
-Downloads the specified license and writes it to a LICENSE file in the working
-directory.
+Downloads the specified license, writes it to a LICENSE file in the working
+directory and creates a commit that commits the LICENSE file to the repository.
 
 ```bash
-./licenser.sh -c [license-type]
+./licenser.sh -d [license-type]
 ```
 
 Downloads the specified license and writes it to a LICENSE file in the working
-directory and creates a commit that commits the LICENSE file to the repository.
+directory, but does not perform any git operations.
 
 ## Requirements
 
