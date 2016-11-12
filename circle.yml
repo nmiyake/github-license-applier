@@ -4,7 +4,7 @@ dependencies:
 
 test:
   override:
-    - ./licenser.sh -d mit
+    - ./licenser.sh -d mit "Nick Miyake"
     - |
         if [[ -z $(git status --porcelain) ]]; then \
             true; \

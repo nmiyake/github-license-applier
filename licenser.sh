@@ -81,6 +81,10 @@ lgpl-3.0|lgpl)
 mit)
     NAME="MIT"
     KNOWN_SHA256=002c2696d92b5c8cf956c11072baa58eaf9f6ade995c031ea635c6a1ee342ad1
+    if [ $# -lt 2 ]; then
+        echo "MIT license requires full name of copyright holder as the second argument"
+        exit 1
+    fi
     ;;
 mpl-2.0|mpl)
     NAME="MPL 2.0"
@@ -107,6 +111,16 @@ if [ "$KNOWN_SHA256" != "$FILE_SHA256" ]; then
     echo "Expected: $KNOWN_SHA256"
     echo "Was:      $FILE_SHA256"
     exit 1
+fi
+
+# MIT license requires year and name of copyright holder
+if [ "$NAME" == "MIT" ]; then
+    CONTENT=$(<LICENSE)
+    YEAR=$(date +"%Y")
+    AUTHOR=$2
+    CONTENT="${CONTENT//\[year\]/$YEAR}"
+    CONTENT="${CONTENT//\[fullname\]/$AUTHOR}"
+    echo "$CONTENT" > LICENSE
 fi
 
 if [ "$COMMIT" == true ] && [[ ! -z $(git status --porcelain) ]]; then
