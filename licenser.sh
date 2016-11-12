@@ -8,27 +8,31 @@
 set -euo pipefail
 
 function compute_sha256 {
-    local file=$1
+    local content=$1
     if command -v openssl >/dev/null 2>&1; then
         # print SHA-256 hash using openssl
-        openssl dgst -sha256 "$file" | sed -E 's/SHA256\(.*\)= //'
+        openssl dgst -sha256 <(echo "$content") | sed -E 's/SHA256\(.*\)= //'
     elif command -v shasum >/dev/null 2>&1; then
         # Darwin systems ship with "shasum" utility
-        shasum -a 256 "$file" | sed -E 's/[[:space:]]+.+//'
+        shasum -a 256 <(echo "$content") | sed -E 's/[[:space:]]+.+//'
     elif command -v sha256sum >/dev/null 2>&1; then
         # Most Linux systems ship with sha256sum utility
-        sha256sum "$file" | sed -E 's/[[:space:]]+.+//'
+        sha256sum <(echo "$content") | sed -E 's/[[:space:]]+.+//'
     else
-        echo "Could not find program to calculate SHA-256 checksum for file"
+        echo "Could not find program to calculate SHA-256 checksum"
         exit 1
     fi
 }
 
 COMMIT=true
-while getopts "d" opt; do
+VERIFY=false
+while getopts "dv" opt; do
 case $opt in
     d)
         COMMIT=false
+        ;;
+    v)
+        VERIFY=true
         ;;
     \?)
         exit 1
@@ -103,27 +107,44 @@ esac
 
 # LICENSE file provided by GitHub.com for new repositories
 URL=https://api.github.com/licenses/$KEY
-echo "$(curl "$URL" -H "Accept: application/vnd.github.drax-preview+json" | jq -r '.body')" > LICENSE
+LICENSE="$(curl "$URL" -H "Accept: application/vnd.github.drax-preview+json" | jq -r '.body')"
 
-FILE_SHA256=$(compute_sha256 LICENSE)
-if [ "$KNOWN_SHA256" != "$FILE_SHA256" ]; then
+LICENSE_SHA256=$(compute_sha256 "$LICENSE")
+if [ "$KNOWN_SHA256" != "$LICENSE_SHA256" ]; then
     echo "SHA-256 sum of LICENSE does not match expected value for file at $URL"
     echo "Expected: $KNOWN_SHA256"
-    echo "Was:      $FILE_SHA256"
+    echo "Was:      $LICENSE_SHA256"
     exit 1
 fi
 
 # MIT license requires year and name of copyright holder
 if [ "$NAME" == "MIT" ]; then
-    CONTENT=$(<LICENSE)
     YEAR=$(date +"%Y")
     AUTHOR=$2
-    CONTENT="${CONTENT//\[year\]/$YEAR}"
-    CONTENT="${CONTENT//\[fullname\]/$AUTHOR}"
-    echo "$CONTENT" > LICENSE
+    LICENSE="${LICENSE//\[year\]/$YEAR}"
+    LICENSE="${LICENSE//\[fullname\]/$AUTHOR}"
 fi
 
-if [ "$COMMIT" == true ] && [[ ! -z $(git status --porcelain) ]]; then
+if [ "$VERIFY" == true ]; then
+    # if verify mode is true, diff existing license with generated one
+    set +e
+    DIFF=$(diff <(echo "$LICENSE") LICENSE)
+    DIFF_EXIT_CODE=$?
+    set -e
+
+    # if diff failed for reason other than inputs differing, fail and exit
+    if [ "$DIFF_EXIT_CODE" -ne 0 ] && [ "$DIFF_EXIT_CODE" -ne 1 ]; then
+        echo "diff failed with exit code $DIFF_EXIT_CODE"
+        exit 1
+    fi
+
+    # if diff existed, print and exit
+    if [ ! -z "$DIFF" ]; then
+        echo "Existing LICENSE differs from generated one:"
+        echo "$DIFF"
+        exit 1
+    fi
+elif [ "$COMMIT" == true ] && [[ ! -z $(git status --porcelain) ]]; then
     git add LICENSE
     git commit -m "Update LICENSE" -m "Use default $NAME LICENSE file provided by GitHub.com"
 fi
