@@ -4,12 +4,4 @@ dependencies:
 
 test:
   override:
-    - ./licenser.sh -d mit "Nick Miyake"
-    - |
-        if [[ -z $(git status --porcelain) ]]; then \
-            true; \
-        else \
-            echo "Generated LICENSE file differed from LICENSE in commit. See LICENSE_diff.txt in artifacts directory for diff." && \
-            (git diff > $CIRCLE_ARTIFACTS/LICENSE_diff.txt) && \
-            false; \
-        fi
+    - ./licenser.sh -v mit "Nick Miyake"
